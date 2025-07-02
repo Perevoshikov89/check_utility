@@ -14,7 +14,7 @@ class AppGUIExtended(AppGUI):
             return
 
         # Задаём URL запроса (замени на нужный)
-        url = "https://example.com/api/send"
+        url = "https:client.demo.nbki.msk:8082/products/B2BRUTDF"
 
         try:
             self.status_label.config(text="Подписываем XML...")
