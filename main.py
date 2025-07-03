@@ -12,16 +12,19 @@ class AppGUIExtended(AppGUI):
         if not self.xml_path or not self.output_dir:
             messagebox.showerror("Ошибка", "Выберите XML и папку перед запуском.")
             return
+        if not self.selected_thumbprint:
+            messagebox.showerror("Ошибка", "Выберите сертификат для подписи.")
+            return
 
-        # Задаём URL запроса (замени на нужный)
+        # Замените на ваш рабочий URL
         url = "https://client.demo.nbki.msk:8082/products/B2BRUTDF"
 
         try:
             self.status_label.config(text="Подписываем XML...")
-            signed_path = sign_xml_file(self.xml_path, self.output_dir)
+            signed_path = sign_xml_file(self.xml_path, self.output_dir, self.selected_thumbprint)
 
-            self.status_label.config(text="Отправляем запрос на сервер...")
-            zip_bytes = send_signed_xml(signed_path, url)
+            self.status_label.config(text="Отправляем запрос...")
+            zip_bytes = send_signed_xml(signed_path, url, self.output_dir)
 
             self.status_label.config(text="Распаковываем ответ...")
             xml_extracted = extract_zip_response(zip_bytes, self.output_dir)
@@ -29,10 +32,10 @@ class AppGUIExtended(AppGUI):
             if not xml_extracted:
                 raise RuntimeError("В архиве не найден XML-файл.")
 
-            self.status_label.config(text="Снимаем подпись с XML...")
+            self.status_label.config(text="Удаляем подпись...")
             xml_clean = remove_signature(xml_extracted, self.output_dir)
 
-            self.status_label.config(text=f"Готово! Результат сохранён: {xml_clean.name}")
+            self.status_label.config(text=f"Готово: {xml_clean.name}")
             messagebox.showinfo("Успех", f"Обработка завершена.\nРезультат: {xml_clean}")
 
         except Exception as e:

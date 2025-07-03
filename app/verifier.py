@@ -1,34 +1,16 @@
-import subprocess
 from pathlib import Path
-from app.utils import find_cryptcp_exe
+import xml.etree.ElementTree as ET
 
 
 def remove_signature(xml_path: Path, output_dir: Path) -> Path:
-    """
-    Снимает ЭЦП с XML-файла с помощью КриптоПро и сохраняет чистый результат.
+    tree = ET.parse(xml_path)
+    root = tree.getroot()
 
-    :param xml_path: Путь к XML-файлу с ЭЦП
-    :param output_dir: Папка, куда сохранить результат
-    :return: Путь к новому XML-файлу без ЭЦП
-    :raises RuntimeError: если верификация не прошла
-    """
-    cryptcp = find_cryptcp_exe()
+    for elem in root.findall(".//{*}Signature"):
+        parent = root.find(".//{*}Signature/..")
+        if parent is not None:
+            parent.remove(elem)
 
-    clean_path = output_dir / f"{xml_path.stem}.clean.xml"
-
-    command = [
-        str(cryptcp),
-        "-verify",
-        "-dir", str(output_dir),
-        str(xml_path)
-    ]
-
-    result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-
-    if result.returncode != 0:
-        raise RuntimeError(f"Ошибка при снятии подписи: {result.stderr}")
-
-    if not clean_path.exists():
-        raise FileNotFoundError(f"Файл без подписи не найден: {clean_path}")
-
+    clean_path = output_dir / (xml_path.stem + "_clean.xml")
+    tree.write(clean_path, encoding="utf-8", xml_declaration=True)
     return clean_path
